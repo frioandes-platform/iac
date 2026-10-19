@@ -1,0 +1,4 @@
+# Optional non-secret overrides. No CIDRs or credentials belong in this file.
+location            = "eastus2"
+resource_group_name = "rg-fa-network-dev"
+owner_team          = "equipo-plataforma"

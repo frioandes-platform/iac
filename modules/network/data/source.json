@@ -1,0 +1,23 @@
+{
+  "repository": "frioandes-platform/planning",
+  "commit": "739be496705504a270ed499d792d0897214bb48e",
+  "files": {
+    "ip-plan.csv": {
+      "path": "docs/architecture/red/data/ip-plan.csv",
+      "sha256": "d55eabf7c7be8e5d0d751e01885f4794fed8b0efe54374c285825ad517f8660b",
+      "git_blob_sha": "82a90fb7ad8c324399ed82a4f5e5258f5fc3bf06"
+    },
+    "onprem-inventory.csv": {
+      "path": "docs/architecture/red/data/onprem-inventory.csv",
+      "sha256": "7bdcd686c47174dc14c23e9b545ac15832902996054e795f2eeae03451876d9e",
+      "git_blob_sha": "e9c6c876b22d5a882c8d4c201d3d977bde7ebb70"
+    }
+  },
+  "derived": {
+    "ip-plan.terraform.csv": {
+      "source": "ip-plan.csv",
+      "sha256": "212886dcc535e02c8dd96b8d73bd6c22c96099d00568bf92f98435b261262a68",
+      "transformation": "RFC 4180 quoting; merge only the known trailing notes fields; preserve all first nine fields"
+    }
+  }
+}
