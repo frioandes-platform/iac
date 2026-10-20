@@ -1,3 +1,7 @@
+variables {
+  security_token_values = jsondecode(file("../../tests/fixtures/security-tokens.json"))
+}
+
 # A mocked plan exercises the real module without Azure authentication or resources.
 mock_provider "azurerm" {}
 

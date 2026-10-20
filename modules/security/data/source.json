@@ -1,0 +1,26 @@
+{
+  "repository": "frioandes-platform/planning",
+  "commit": "bcb98b538ac7df7f8733c7ed949cef9290d650bc",
+  "network_base": {
+    "repository": "frioandes-platform/iac",
+    "commit": "80bce9aecfe653a6c81b8eda41d1473421325373",
+    "issue": 20
+  },
+  "files": {
+    "firewall-policy.csv": {
+      "path": "docs/architecture/red/data/firewall-policy.csv",
+      "sha256": "3f3e8359f220968fa873ee3fc050c44ac860f7cdb079db5858f9a3a489f7684a",
+      "git_blob_sha": "0d57b5f28df59cffc758131070fe2c95eeeff3bd"
+    },
+    "firewall-settings.csv": {
+      "path": "docs/architecture/red/data/firewall-settings.csv",
+      "sha256": "c41ed2e0a2259101486961cfbc535c5bbfd9cc027bae5d7de8b08a8bdb45001d",
+      "git_blob_sha": "11b65a6e3212310da96c9b93175f0f974b99926a"
+    },
+    "ip-plan.csv": {
+      "path": "docs/architecture/red/data/ip-plan.csv",
+      "sha256": "a520eba842e6d7781705613d539fcfd018bfd00481f3842814d07d97036b91a0",
+      "git_blob_sha": "31a9cf931148948c6f4414222db4a2a9f20b5e67"
+    }
+  }
+}

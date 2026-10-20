@@ -23,3 +23,15 @@ module "network" {
   location            = azurerm_resource_group.network.location
   tags                = local.tags
 }
+
+module "subnet_security" {
+  source                     = "../../modules/security/subnet-controls"
+  environment                = local.environment
+  resource_group_name        = azurerm_resource_group.network.name
+  location                   = var.location
+  tags                       = local.tags
+  subnet_ids                 = module.network.subnet_ids
+  token_values               = var.security_token_values
+  active_temporary_rule_ids  = var.active_temporary_nsg_rules
+  migration_change_reference = var.migration_change_reference
+}
