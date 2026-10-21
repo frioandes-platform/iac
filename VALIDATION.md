@@ -85,3 +85,18 @@ After the review corrections, `bash scripts/check.sh` completed successfully:
 This successful local run completes the provider validation previously
 pending in the authoring environment. No authenticated Azure plan or
 apply was executed.
+
+## Validation on the developer workstation
+
+`bash scripts/check-ingest.sh` completed successfully with AzureRM 4.62.0.
+
+- All 17 Python regression tests passed.
+- Snapshot integrity and network non-overlap checks passed.
+- Terraform formatting and configuration validation passed.
+- Mocked Terraform tests passed in connectivity, dev, test and prod,
+  including the ingestion integration and rejection scenarios.
+- All seven security comparisons completed without discrepancies.
+- Verification evidence hashes were recorded.
+
+This execution resolves the provider-validation limitation recorded during
+authoring. No authenticated Azure deployment or live send/receive test was run.

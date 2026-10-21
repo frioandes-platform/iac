@@ -1,0 +1,6 @@
+# Example only. Retain the approved firewall token values separately.
+# Reuse/import an existing shared zone rather than duplicating it.
+enable_eventhub_private_dns = true
+eventhub_dns_spoke_vnet_ids = {
+  dev = "<vnet_id output from the already deployed dev root>"
+}
