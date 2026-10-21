@@ -1,0 +1,16 @@
+# Example only. These deliberately invalid placeholders must be replaced.
+# Keep the approved security_token_values in your separate, untracked tfvars.
+# Create dev network/security first with ingest unset, then connectivity DNS.
+ingest = {
+  namespace_name      = "<globally-unique-development-namespace>"
+  private_dns_zone_id = "<eventhub_private_dns.zone_id output from connectivity>"
+
+  # Optional; empty maps grant no sender/receiver access.
+  # Use distinct managed identities for the future real services.
+  sender_principal_ids = {
+    simulator = "<approved-development-Entra-object-ID>"
+  }
+  receiver_principal_ids = {
+    verifier = "<approved-development-Entra-object-ID>"
+  }
+}

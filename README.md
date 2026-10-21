@@ -12,11 +12,12 @@ modules/        reusable Terraform modules
   network/       virtual network and 11 subnets of one environment (issue #20)
     data/          pinned source files and canonical CSV verification copy
   security/      shared firewall policy and per-environment subnet controls (#21)
+  ingest/        representative private telemetry alert buffer (#22)
 environments/   one folder per environment, each calling the modules above
   dev/
   test/
   prod/
-  connectivity/  shared hub firewall and policy
+  connectivity/  shared hub firewall, policy and optional Event Hubs private DNS
 scripts/        data verification and local Terraform checks
 tests/          Python verifier regression tests
 VALIDATION.md   network validation record from #20
@@ -51,7 +52,8 @@ bash scripts/check.sh
 The script verifies snapshot hashes and address safety, runs the Python
 regression tests, checks formatting, initializes each environment with
 `-backend=false`, validates the configuration and executes mocked Terraform
-plans for dev, test and prod. These checks do not require Azure authentication
+tests for dev, test and prod, including a mock apply for ingest integration.
+These checks do not require Azure authentication
 and do not create cloud resources.
 
 Commit the generated `environments/<env>/.terraform.lock.hcl` files. Keep
@@ -116,6 +118,7 @@ Run these commands from `environments/dev`; use the matching root and
 
 ## Modules
 
+- [`modules/ingest`](modules/ingest/README.md): private Event Hubs alert buffer from planning #13, implemented for #22.
 - [`modules/security`](modules/security/README.md): shared firewall policy and application NSG controls from issue #21.
 - [`modules/network`](modules/network/README.md): virtual network and
   subnets for one environment, from `frioandes-platform/planning` issue #8.
@@ -147,16 +150,34 @@ terraform fmt -recursive
 bash scripts/check-security.sh
 ```
 
-This runs mocked provider plans and compares planned resources against the
-pinned policy table, including the migration scenario. It does not apply any
-resources. See [modules/security/README.md](modules/security/README.md) for
+This runs mocked provider tests and compares planned resources against the
+pinned policy table, including the migration scenario. The ingest integration
+also uses a mock apply; no resources are deployed in Azure.
+See [modules/security/README.md](modules/security/README.md) for
 scope, source hashes, control-point exclusions and the future routing/DNS
 integration. The optional Terraform Core contract evaluation is explicitly
 separate from provider-plan validation.
+
+## Representative workload (#22)
+
+`modules/ingest` creates the telemetry alert Event Hub from #13, sections 3.2
+and 5.2. The optional dev root call references `module.network` and
+`module.subnet_security`. General public access and SAS are disabled; the
+private endpoint uses `snet-data-pe`. Entra roles are scoped to the alert hub.
+The shared DNS zone remains owned by connectivity, linked to the hub and
+explicit application VNets. Neither the network nor security CSV snapshot changes.
+
+Run `bash scripts/check-ingest.sh` for #20/#21 regressions and the new tests.
+See [the module README](modules/ingest/README.md) for opt-in inputs, cross-root
+DNS activation, runtime checks and the exact scope of the representative component.
+See [the validation record](docs/ingest-validation.md) for checks actually executed.
+No IoT Hub, Stream Analytics job, notifier, live sensor or complete alert pipeline
+is deployed by this module. A successful mocked test is not a live send/receive test.
 
 ## Related planning issues
 
 - [#8](https://github.com/frioandes-platform/planning/issues/8) network topology and the verified IP plan this module reads.
 - [#20](https://github.com/frioandes-platform/planning/issues/20) this repository and the network module.
 - [#21](https://github.com/frioandes-platform/planning/issues/21) the security module, checked against the firewall policy table.
+- [#22](https://github.com/frioandes-platform/planning/issues/22) the representative compute or ingestion module.
 - [#23](https://github.com/frioandes-platform/planning/issues/23) the CI/CD pipeline that will plan and apply these environments.
