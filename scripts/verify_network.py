@@ -42,7 +42,8 @@ def load_snapshot(data_dir=DATA):
             require(normalized == normalize_plan(content), "Normalized CSV differs from its documented source transformation")
             expected_hash = manifest["derived"]["ip-plan.terraform.csv"]["sha256"]
             require(hashlib.sha256(normalized).hexdigest() == expected_hash, "Normalized CSV checksum mismatch")
-            content = normalized
+            # Terraform consumes the source directly; the canonical copy is an
+            # additional reproducibility check, not a repair of malformed input.
         records = list(csv.reader(io.StringIO(content.decode("utf-8")), strict=True))
         require(all(len(row) == len(records[0]) for row in records), f"Wrong CSV field count: {name}")
         tables[name] = [dict(zip(records[0], row)) for row in records[1:]]

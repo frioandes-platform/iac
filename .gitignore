@@ -1,5 +1,4 @@
 .terraform/
-.terraform.lock.hcl
 *.tfstate
 *.tfstate.*
 *.tfvars
@@ -8,3 +7,7 @@ plan.json
 crash.log
 crash.*.log
 .DS_Store
+
+# Generated Python caches
+__pycache__/
+*.pyc

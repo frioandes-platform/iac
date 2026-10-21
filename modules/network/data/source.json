@@ -1,11 +1,11 @@
 {
   "repository": "frioandes-platform/planning",
-  "commit": "739be496705504a270ed499d792d0897214bb48e",
+  "commit": "bcb98b538ac7df7f8733c7ed949cef9290d650bc",
   "files": {
     "ip-plan.csv": {
       "path": "docs/architecture/red/data/ip-plan.csv",
-      "sha256": "d55eabf7c7be8e5d0d751e01885f4794fed8b0efe54374c285825ad517f8660b",
-      "git_blob_sha": "82a90fb7ad8c324399ed82a4f5e5258f5fc3bf06"
+      "sha256": "a520eba842e6d7781705613d539fcfd018bfd00481f3842814d07d97036b91a0",
+      "git_blob_sha": "31a9cf931148948c6f4414222db4a2a9f20b5e67"
     },
     "onprem-inventory.csv": {
       "path": "docs/architecture/red/data/onprem-inventory.csv",
@@ -16,8 +16,8 @@
   "derived": {
     "ip-plan.terraform.csv": {
       "source": "ip-plan.csv",
-      "sha256": "212886dcc535e02c8dd96b8d73bd6c22c96099d00568bf92f98435b261262a68",
-      "transformation": "RFC 4180 quoting; merge only the known trailing notes fields; preserve all first nine fields"
+      "sha256": "e6a62e168996b2c92bf7fcea24bb90444d759ebecaafbcb26a05a5d4690c6db9",
+      "transformation": "Canonical RFC 4180 quoting and LF line endings; reject malformed rows; preserve all ten fields"
     }
   }
 }

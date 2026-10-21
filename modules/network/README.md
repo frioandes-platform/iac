@@ -7,24 +7,23 @@ selector. `hub` and reservation rows are never instantiated.
 ## Source and provenance
 
 Repository: [`frioandes-platform/planning`](https://github.com/frioandes-platform/planning).
-Source commit: `739be496705504a270ed499d792d0897214bb48e`.
+Source commit: `bcb98b538ac7df7f8733c7ed949cef9290d650bc` (planning PR #64).
 Design: [issue #8](https://github.com/frioandes-platform/planning/issues/8).
 
 | Vendored file | Source path | SHA-256 at copy time |
 |---|---|---|
-| `data/ip-plan.csv` | `docs/architecture/red/data/ip-plan.csv` | `d55eabf7c7be8e5d0d751e01885f4794fed8b0efe54374c285825ad517f8660b` |
+| `data/ip-plan.csv` | `docs/architecture/red/data/ip-plan.csv` | `a520eba842e6d7781705613d539fcfd018bfd00481f3842814d07d97036b91a0` |
 | `data/onprem-inventory.csv` | `docs/architecture/red/data/onprem-inventory.csv` | `7bdcd686c47174dc14c23e9b545ac15832902996054e795f2eeae03451876d9e` |
 
-Terraform reads `data/ip-plan.terraform.csv`, generated reproducibly by
-`python3 scripts/prepare_network_data.py`. The upstream CSV has three rows
-with unquoted commas in the trailing notes. The generator merges only those
-known notes fields and writes strict CSV. All names, CIDRs and other first
-nine fields remain unchanged. The original files and their hashes above remain
-intact; the derived SHA-256 is recorded separately in `data/source.json`.
-The verifier compares the derived bytes with the expected transformation and
-checks every row has the header field count. Unknown malformed rows fail.
+Terraform reads the corrected `data/ip-plan.csv` directly with `csvdecode`.
+`python3 scripts/prepare_network_data.py` generates `data/ip-plan.terraform.csv`
+only as a reproducible canonical verification copy. It preserves every field
+and rejects malformed rows instead of repairing unquoted commas. The source
+bytes and their hashes above remain intact; the canonical copy has its own
+SHA-256 in `data/source.json`. The verifier checks both hashes, the expected
+transformation and each row's field count.
 
-The source Git blob IDs are `82a90fb7ad8c324399ed82a4f5e5258f5fc3bf06` and
+The source Git blob IDs are `31a9cf931148948c6f4414222db4a2a9f20b5e67` and
 `e9c6c876b22d5a882c8d4c201d3d977bde7ebb70`, respectively. These match the
 original remote files. `data/source.json` stores machine-readable provenance.
 The on-premises inventory is used by the repository verifier, not to create

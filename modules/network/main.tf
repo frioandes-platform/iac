@@ -1,6 +1,6 @@
 locals {
   source_manifest = jsondecode(file("${path.module}/data/source.json"))
-  ip_plan_path    = "${path.module}/data/ip-plan.terraform.csv"
+  ip_plan_path    = "${path.module}/data/ip-plan.csv"
   ip_plan         = csvdecode(file(local.ip_plan_path))
   environment_rows = [
     for row in local.ip_plan : row
@@ -33,7 +33,7 @@ resource "azurerm_virtual_network" "this" {
     precondition {
       condition = (
         filesha256("${path.module}/data/ip-plan.csv") == local.source_manifest.files["ip-plan.csv"].sha256 &&
-        filesha256(local.ip_plan_path) == local.source_manifest.derived["ip-plan.terraform.csv"].sha256
+        filesha256("${path.module}/data/ip-plan.terraform.csv") == local.source_manifest.derived["ip-plan.terraform.csv"].sha256
       )
       error_message = "The address plan checksum differs from source.json. Review the planning snapshot before using it."
     }

@@ -23,10 +23,14 @@ class NetworkVerificationTests(unittest.TestCase):
         original = (DATA / "ip-plan.csv").read_bytes()
         raw = list(csv.reader(io.StringIO(original.decode("utf-8"))))
         fixed = list(csv.reader(io.StringIO(normalize_plan(original).decode("utf-8")), strict=True))
-        self.assertEqual(sum(len(row) != 10 for row in raw), 3)
+        self.assertEqual(len(raw) - 1, 44)
+        self.assertTrue(all(len(row) == 10 for row in raw))
         self.assertTrue(all(len(row) == 10 for row in fixed))
-        self.assertEqual([row[:9] for row in raw], [row[:9] for row in fixed])
-        self.assertEqual(fixed[11][9], ",".join(raw[11][9:]))
+        self.assertEqual(raw, fixed)
+        # The corrected upstream CSV must remain strict, including its notes.
+        malformed = original.replace(b'snet-ingress,', b'snet-ingress,unexpected,', 1)
+        with self.assertRaisesRegex(ValueError, "Wrong CSV field count"):
+            normalize_plan(malformed)
 
     def test_malformed_derived_csv_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:

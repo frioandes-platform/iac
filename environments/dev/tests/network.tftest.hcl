@@ -11,7 +11,7 @@ run "approved_environment_network" {
 
   assert {
     condition = toset(module.network.address_space) == toset(distinct([
-      for row in csvdecode(file("${path.root}/../../modules/network/data/ip-plan.terraform.csv")) : row.vnet_cidr
+      for row in csvdecode(file("${path.root}/../../modules/network/data/ip-plan.csv")) : row.vnet_cidr
       if row.env == "dev"
     ]))
     error_message = "The planned VNet differs from the approved CSV."
@@ -19,7 +19,7 @@ run "approved_environment_network" {
 
   assert {
     condition = jsonencode(module.network.subnet_prefixes) == jsonencode({
-      for row in csvdecode(file("${path.root}/../../modules/network/data/ip-plan.terraform.csv")) : row.subnet => [row.cidr]
+      for row in csvdecode(file("${path.root}/../../modules/network/data/ip-plan.csv")) : row.subnet => [row.cidr]
       if row.env == "dev"
     })
     error_message = "The planned subnet set or CIDRs differ from the approved CSV."
