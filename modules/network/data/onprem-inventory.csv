@@ -1,0 +1,24 @@
+site,use,cidr,terminates
+Cali,Usuarios de la sede y torre de control,10.20.0.0/24,Firewall de Cali
+Cali,Servidores de aplicación y front,10.20.1.0/24,Firewall de Cali
+Cali,Bases y caché,10.20.2.0/24,Firewall de Cali
+Cali,"Archivo de 1,2 PB y Zabbix",10.20.3.0/24,Firewall de Cali
+Cali,Administración de VMware,10.20.4.0/24,Firewall de Cali
+Cali,Publicación del rastreo (Nginx),10.20.5.0/24,"Firewall de Cali, con NAT a internet"
+Cali,Enlaces VPN hacia centros y hacia el firewall,10.20.10.0/24,Firewall de Cali
+Buenaventura,Usuarios del centro,10.31.0.0/24,VPN site-to-site
+Buenaventura,Sensores de cuartos fríos,10.31.1.0/24,VPN site-to-site
+Bogotá,Usuarios del centro,10.32.0.0/24,VPN site-to-site
+Bogotá,Sensores de cuartos fríos,10.32.1.0/24,VPN site-to-site
+Medellín,Usuarios del centro,10.33.0.0/24,VPN site-to-site
+Medellín,Sensores de cuartos fríos,10.33.1.0/24,VPN site-to-site
+Barranquilla,Usuarios del centro,10.34.0.0/24,VPN site-to-site
+Barranquilla,Sensores de cuartos fríos,10.34.1.0/24,VPN site-to-site
+Bucaramanga,Usuarios del centro,10.35.0.0/24,VPN site-to-site
+Bucaramanga,Sensores de cuartos fríos,10.35.1.0/24,VPN site-to-site
+Pereira,Usuarios del centro,10.36.0.0/24,VPN site-to-site
+Pereira,Sensores de cuartos fríos,10.36.1.0/24,VPN site-to-site
+Pasto,Usuarios del centro,10.37.0.0/24,VPN site-to-site
+Pasto,Sensores de cuartos fríos,10.37.1.0/24,VPN site-to-site
+Neiva,Usuarios del centro,10.38.0.0/24,VPN site-to-site
+Neiva,Sensores de cuartos fríos,10.38.1.0/24,VPN site-to-site

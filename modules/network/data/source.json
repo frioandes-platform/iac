@@ -1,0 +1,23 @@
+{
+  "repository": "frioandes-platform/planning",
+  "commit": "bcb98b538ac7df7f8733c7ed949cef9290d650bc",
+  "files": {
+    "ip-plan.csv": {
+      "path": "docs/architecture/red/data/ip-plan.csv",
+      "sha256": "a520eba842e6d7781705613d539fcfd018bfd00481f3842814d07d97036b91a0",
+      "git_blob_sha": "31a9cf931148948c6f4414222db4a2a9f20b5e67"
+    },
+    "onprem-inventory.csv": {
+      "path": "docs/architecture/red/data/onprem-inventory.csv",
+      "sha256": "7bdcd686c47174dc14c23e9b545ac15832902996054e795f2eeae03451876d9e",
+      "git_blob_sha": "e9c6c876b22d5a882c8d4c201d3d977bde7ebb70"
+    }
+  },
+  "derived": {
+    "ip-plan.terraform.csv": {
+      "source": "ip-plan.csv",
+      "sha256": "e6a62e168996b2c92bf7fcea24bb90444d759ebecaafbcb26a05a5d4690c6db9",
+      "transformation": "Canonical RFC 4180 quoting and LF line endings; reject malformed rows; preserve all ten fields"
+    }
+  }
+}

@@ -1,5 +1,4 @@
 .terraform/
-.terraform.lock.hcl
 *.tfstate
 *.tfstate.*
 *.tfvars
@@ -8,3 +7,9 @@ plan.json
 crash.log
 crash.*.log
 .DS_Store
+
+# Generated checks; retain .terraform.lock.hcl for reproducible providers.
+__pycache__/
+*.pyc
+.security-verification/
+security-core-evaluation.json

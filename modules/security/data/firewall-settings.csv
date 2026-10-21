@@ -1,0 +1,7 @@
+clave,valor,motivo
+sku_tier,Standard,Cubre las reglas del diseño; se sube a Premium sin cortar el servicio si se decide inspeccionar tráfico cifrado
+threat_intel_mode,Alert and Deny,Bloquea y registra el tráfico hacia y desde IP y dominios maliciosos conocidos
+dns_proxy,Desactivado,Ninguna regla de red usa nombres de dominio; las de aplicación no lo necesitan. Se activa en la variante con AKS si se usan reglas de red con nombres
+snat_private_ranges,10.0.0.0/10 10.101.1.0/24 10.101.2.0/27 10.101.2.128/25 10.101.3.0/24 10.101.4.0/22 10.102.1.0/24 10.102.2.0/27 10.102.2.128/25 10.102.3.0/24 10.102.4.0/22 10.103.1.0/24 10.103.2.0/27 10.103.2.128/25 10.103.3.0/24 10.103.4.0/22 10.110.0.0/15,"Destinos a los que el firewall no traduce el origen: las sedes (10.0.0.0/10), las subredes de la nube que no tienen endpoints privados y la reserva de la segunda nube. Hacia los endpoints privados sí traduce, para que la respuesta vuelva por el firewall"
+public_ip_count,1,Una IP de salida alcanza con Container Apps. Con AKS Microsoft recomienda planear al menos 20
+rule_collection_groups,200 sedes-a-nube; 300 salida-internet; 400 transito-convivencia; 500 migracion,Los grupos 400 y 500 solo tienen reglas temporales y se borran completos al cerrar la convivencia
