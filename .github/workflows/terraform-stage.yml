@@ -1,0 +1,77 @@
+name: Terraform stage
+on:
+  workflow_call:
+    inputs:
+      operation:
+        type: string
+        required: true
+      environment:
+        type: string
+        required: true
+      image:
+        type: string
+        required: true
+      previous_receipt:
+        type: string
+        required: false
+        default: '{}'
+      incident_id:
+        type: string
+        required: false
+        default: ''
+    outputs:
+      receipt:
+        description: Successful immutable promotion receipt
+        value: ${{ jobs.apply.outputs.receipt }}
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+jobs:
+  plan:
+    if: github.ref == 'refs/heads/main' && inputs.operation == 'plan'
+    # Read-only Azure identity: planning does not wait for production approval.
+    runs-on: [self-hosted, linux, x64, fa-plan, "${{ format('fa-{0}', inputs.environment) }}"]
+    timeout-minutes: 50
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
+      RELEASE_IMAGE: ${{ inputs.image }}
+      PREVIOUS_RECEIPT: ${{ inputs.previous_receipt }}
+      INCIDENT_ID: ${{ inputs.incident_id }}
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: 1.9.8
+          terraform_wrapper: false
+      - id: execute
+        run: python3 scripts/pipeline/run.py plan --environment "$DEPLOY_ENVIRONMENT"
+  apply:
+    if: github.ref == 'refs/heads/main' && inputs.operation == 'apply'
+    # The prod environment's reviewers approve BEFORE this job starts.
+    environment: ${{ inputs.environment }}
+    runs-on: [self-hosted, linux, x64, "${{ format('fa-{0}', inputs.environment) }}"]
+    timeout-minutes: 70
+    outputs:
+      receipt: ${{ steps.execute.outputs.receipt }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
+      RELEASE_IMAGE: ${{ inputs.image }}
+      PREVIOUS_RECEIPT: ${{ inputs.previous_receipt }}
+      INCIDENT_ID: ${{ inputs.incident_id }}
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: 1.9.8
+          terraform_wrapper: false
+      - id: execute
+        run: python3 scripts/pipeline/run.py apply --environment "$DEPLOY_ENVIRONMENT"

@@ -1,0 +1,7 @@
+self-hosted-runner:
+  labels:
+    - fa-build
+    - fa-plan
+    - fa-dev
+    - fa-test
+    - fa-prod

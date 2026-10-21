@@ -13,3 +13,9 @@ __pycache__/
 *.pyc
 .security-verification/
 security-core-evaluation.json
+
+# Runtime inputs, private plans and pipeline demonstration build output.
+*.tfvars.json
+.pipeline-runtime/
+containers/release-probe/release-probe
+.venv/

@@ -1,0 +1,156 @@
+name: Promote dev to test to prod
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      incident_id:
+        description: Optional declared incident ID; independent authorization is required
+        type: string
+        required: false
+        default: ''
+permissions:
+  contents: read
+# One release at a time, including shared connectivity. Never cancel a running apply.
+concurrency:
+  group: frioandes-cloud-promotion
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: 1.9.8
+          terraform_wrapper: false
+      - name: Install pipeline test dependency
+        run: |
+          python3 -m venv "$RUNNER_TEMP/pipeline-tests"
+          "$RUNNER_TEMP/pipeline-tests/bin/python" -m pip install --disable-pip-version-check PyYAML==6.0.3
+          echo "$RUNNER_TEMP/pipeline-tests/bin" >> "$GITHUB_PATH"
+      - name: Install the pinned workflow linter
+        run: bash scripts/install-actionlint.sh
+      - run: bash scripts/check-pipeline.sh
+      - name: Run the module checks before cloud access
+        run: |
+          if [[ -f scripts/check-ingest.sh ]]; then
+            bash scripts/check-ingest.sh
+          else
+            bash scripts/check-security.sh
+          fi
+  preflight:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/pipeline/run.py preflight
+  build:
+    needs: preflight
+    if: needs.preflight.outputs.enabled == 'true'
+    runs-on: [self-hosted, linux, x64, fa-build]
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: '1.27.3'
+          cache: false
+      - id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/pipeline/run.py build
+  dev_plan:
+    needs: build
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    uses: ./.github/workflows/terraform-stage.yml
+    with:
+      operation: plan
+      environment: dev
+      image: ${{ needs.build.outputs.image }}
+  dev_apply:
+    needs: [build, dev_plan]
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    uses: ./.github/workflows/terraform-stage.yml
+    with:
+      operation: apply
+      environment: dev
+      image: ${{ needs.build.outputs.image }}
+  test_plan:
+    needs: [build, dev_apply]
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    uses: ./.github/workflows/terraform-stage.yml
+    with:
+      operation: plan
+      environment: test
+      image: ${{ needs.build.outputs.image }}
+      previous_receipt: ${{ needs.dev_apply.outputs.receipt }}
+  test_apply:
+    needs: [build, dev_apply, test_plan]
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    uses: ./.github/workflows/terraform-stage.yml
+    with:
+      operation: apply
+      environment: test
+      image: ${{ needs.build.outputs.image }}
+      previous_receipt: ${{ needs.dev_apply.outputs.receipt }}
+  prod_plan:
+    needs: [build, test_apply]
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    uses: ./.github/workflows/terraform-stage.yml
+    with:
+      operation: plan
+      environment: prod
+      image: ${{ needs.build.outputs.image }}
+      previous_receipt: ${{ needs.test_apply.outputs.receipt }}
+  prod_apply:
+    needs: [build, test_apply, prod_plan]
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    uses: ./.github/workflows/terraform-stage.yml
+    with:
+      operation: apply
+      environment: prod
+      image: ${{ needs.build.outputs.image }}
+      previous_receipt: ${{ needs.test_apply.outputs.receipt }}
+      incident_id: ${{ inputs.incident_id || '' }}

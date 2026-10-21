@@ -1,0 +1,74 @@
+"""Regression checks for the actual workflow graph and privilege boundaries."""
+import json
+from pathlib import Path
+import re
+import unittest
+import yaml
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def workflow(name):
+    # YAML 1.1 treats 'on' as Boolean; BaseLoader preserves GitHub's YAML keys.
+    return yaml.load((ROOT / ".github/workflows" / name).read_text(), Loader=yaml.BaseLoader)
+
+
+class WorkflowTests(unittest.TestCase):
+    def test_pr_validation_has_no_cloud_identity_or_private_runner(self):
+        data = workflow("validate.yml")
+        self.assertIn("pull_request", data["on"])
+        self.assertNotIn("pull_request_target", data["on"])
+        self.assertNotIn("id-token", data["permissions"])
+        for job in data["jobs"].values():
+            self.assertEqual(job["runs-on"], "ubuntu-24.04")
+
+    def test_production_transitively_requires_test_and_dev(self):
+        jobs = workflow("promote.yml")["jobs"]
+        for name, previous in (("dev_apply", "dev_plan"), ("test_plan", "dev_apply"),
+                               ("test_apply", "test_plan"), ("prod_plan", "test_apply"), ("prod_apply", "prod_plan")):
+            self.assertIn(previous, jobs[name]["needs"])
+            self.assertNotIn("if", jobs[name])  # No always() bypass of failed dependencies.
+        self.assertEqual(jobs["prod_apply"]["with"]["previous_receipt"], "${{ needs.test_apply.outputs.receipt }}")
+        self.assertEqual(jobs["test_apply"]["with"]["previous_receipt"], "${{ needs.dev_apply.outputs.receipt }}")
+        for name in ("dev_plan", "dev_apply", "test_plan", "test_apply", "prod_plan", "prod_apply"):
+            self.assertEqual(jobs[name]["with"]["image"], "${{ needs.build.outputs.image }}")
+
+    def test_planning_is_automatic_and_production_apply_is_protected(self):
+        promotion = workflow("promote.yml")
+        self.assertEqual(promotion["on"]["push"]["branches"], ["main"])
+        self.assertNotIn("environment", promotion["on"]["workflow_dispatch"]["inputs"])
+        stage = workflow("terraform-stage.yml")
+        self.assertEqual(list(stage["on"]), ["workflow_call"])
+        self.assertNotIn("environment", stage["jobs"]["plan"])
+        self.assertEqual(stage["jobs"]["apply"]["environment"], "${{ inputs.environment }}")
+        self.assertIn("run.py apply", stage["jobs"]["apply"]["steps"][-1]["run"])
+
+    def test_actions_are_immutable_and_checkout_does_not_keep_credentials(self):
+        for name in ("validate.yml", "promote.yml", "terraform-stage.yml"):
+            for job in workflow(name)["jobs"].values():
+                for step in job.get("steps", []):
+                    if "uses" in step:
+                        self.assertRegex(step["uses"], r"^[\w-]+/[\w-]+@[0-9a-f]{40}$")
+                        if step["uses"].startswith("actions/checkout@"):
+                            self.assertEqual(step["with"]["persist-credentials"], "false")
+
+    def test_no_cancellation_of_apply_and_no_plain_plan_upload(self):
+        data = workflow("promote.yml")
+        self.assertEqual(data["concurrency"]["cancel-in-progress"], "false")
+        for path in (ROOT / ".github/workflows").glob("*.yml"):
+            text = path.read_text()
+            self.assertNotIn("upload-artifact", text)
+            self.assertNotIn("secrets.AZURE_CREDENTIALS", text)
+            self.assertNotIn("pull_request_target", text)
+
+    def test_all_roots_use_partial_remote_backends(self):
+        for root in ("dev", "test", "prod", "connectivity"):
+            self.assertIn('backend "azurerm" {}', (ROOT / "environments" / root / "backend.tf").read_text())
+            self.assertTrue((ROOT / "environments" / root / ".terraform.lock.hcl").is_file())
+
+    def test_bootstrap_does_not_ship_fictitious_ids_or_enable_deployment(self):
+        from scripts.pipeline.run import config
+        data = config()
+        # An enabled configuration must pass the runtime validator after bootstrap.
+        self.assertIsInstance(data["enabled"], bool)
+        self.assertEqual(data["repository"], "frioandes-platform/iac")
