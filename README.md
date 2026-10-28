@@ -5,6 +5,15 @@ provider. This repository holds the infrastructure as code; the architecture
 decisions, the verified address plan and the firewall policy table live in
 [`frioandes-platform/planning`](https://github.com/frioandes-platform/planning).
 
+## Delivery pipeline (#23)
+
+[Pipeline documentation](docs/pipeline/README.md) covers automatic plans,
+OIDC/Key Vault, protected dev → test → prod promotion, private remote state,
+container build/push and the dispatch/campaign gate. See the
+[bootstrap runbook](docs/pipeline/bootstrap.md) before enabling cloud deployment
+and the [validation record](docs/pipeline/validation.md) for executed checks.
+Cloud promotion ships disabled until real Azure and GitHub prerequisites exist.
+
 ## Layout
 
 ```
@@ -95,17 +104,18 @@ existing group first rather than managing it from multiple states.
 
 ```bash
 cd environments/dev
-terraform init
-terraform plan -out=plan.tfplan
+terraform init -backend-config=/approved/private/path/dev.backend.hcl
+terraform plan -var-file=/approved/private/path/dev.tfvars.json -out=plan.tfplan
 ```
 
-`terraform apply` is not part of this issue's scope: there is no Azure
-subscription wired up yet, and the CI/CD pipeline that will run `plan` and
-`apply` with OIDC and an approval gate is issue #23.
+The original #20 module scope did not include an Azure apply. The #23 pipeline
+now defines OIDC-backed plan/apply and production approval; cloud activation
+still requires the bootstrap described above.
 
-Remote state with a separate key per environment is to be configured with
-#23 before shared deployment. The current backend-free checks do not establish
-that backend or an OIDC pipeline. Given a real plan, its network names and
+Each root now declares a partial Azure Blob backend for #23. An authenticated
+local init requires the approved OIDC identity and backend configuration; plain
+init is not sufficient until that configuration is supplied. Backend-free mocked
+checks do not connect to remote state. Given a real plan, its network names and
 CIDRs can also be checked against the selected environment's snapshot:
 
 ```bash

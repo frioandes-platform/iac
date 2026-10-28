@@ -100,3 +100,20 @@ apply was executed.
 
 This execution resolves the provider-validation limitation recorded during
 authoring. No authenticated Azure deployment or live send/receive test was run.
+
+## Successful verification on the contributor's Ubuntu machine
+
+The following checks completed successfully on this revision:
+
+- Pipeline policy, workflow and driver tests: 43 passed.
+- Existing network/security Python tests: 17 passed.
+- Snapshot hashes and network non-overlap verification passed.
+- Terraform formatting checks passed.
+- AzureRM 4.62.0 initialization and Terraform validation passed
+  for connectivity, dev, test and prod.
+- Mocked Terraform tests passed in all four roots.
+- All seven firewall/NSG comparisons concluded "sin discrepancias".
+
+This completes the local Terraform validation previously blocked
+in the authoring environment. Docker build, hosted GitHub Actions,
+OIDC authentication and live Azure plan/apply remain unverified.

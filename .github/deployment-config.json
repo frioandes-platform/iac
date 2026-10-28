@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "enabled": false,
+  "repository": "frioandes-platform/iac",
+  "tenant_id": "",
+  "registry": {"name": "", "login_server": "", "repository": "frioandes/release-probe", "build_client_id": "", "subscription_id": ""},
+  "stages": {
+    "dev": {"plan_client_id": "", "apply_client_id": "", "vault": "", "plan_storage_account": "", "plan_container": "plans-dev"},
+    "test": {"plan_client_id": "", "apply_client_id": "", "vault": "", "plan_storage_account": "", "plan_container": "plans-test"},
+    "prod": {"plan_client_id": "", "apply_client_id": "", "vault": "", "plan_storage_account": "", "plan_container": "plans-prod", "control_secret": "production-change-control"}
+  },
+  "roots": {
+    "dev": {"subscription_id": "", "state_storage_account": "", "state_container": "state-dev", "state_key": "dev.tfstate", "tfvars_secret": "terraform-dev"},
+    "test": {"subscription_id": "", "state_storage_account": "", "state_container": "state-test", "state_key": "test.tfstate", "tfvars_secret": "terraform-test"},
+    "prod": {"subscription_id": "", "state_storage_account": "", "state_container": "state-prod", "state_key": "prod.tfstate", "tfvars_secret": "terraform-prod"},
+    "connectivity": {"subscription_id": "", "state_storage_account": "", "state_container": "state-connectivity", "state_key": "connectivity.tfstate", "tfvars_secret": "terraform-connectivity"}
+  }
+}
