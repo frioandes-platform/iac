@@ -16,6 +16,8 @@ security-core-evaluation.json
 
 # Runtime inputs, private plans and pipeline demonstration build output.
 *.tfvars.json
+# Public synthetic inputs loaded explicitly by Infracost, never deployment defaults.
+!costs/inputs/*.tfvars.json
 .pipeline-runtime/
 containers/release-probe/release-probe
 .venv/

@@ -1,8 +1,8 @@
 mock_provider "azurerm" {}
 variables {
   security_token_values       = jsondecode(file("../../tests/fixtures/security-tokens.json"))
-  enable_eventhub_private_dns = true
-  eventhub_dns_spoke_vnet_ids = { dev = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-fa-network-dev/providers/Microsoft.Network/virtualNetworks/vnet-dev" }
+  enable_eventhub_private_dns = jsondecode(file("../../costs/inputs/connectivity.tfvars.json")).enable_eventhub_private_dns
+  eventhub_dns_spoke_vnet_ids = jsondecode(file("../../costs/inputs/connectivity.tfvars.json")).eventhub_dns_spoke_vnet_ids
 }
 run "one_shared_zone_links_hub_and_dev" {
   command = plan

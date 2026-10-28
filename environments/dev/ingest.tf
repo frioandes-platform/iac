@@ -2,6 +2,7 @@ variable "ingest" {
   description = "Opt-in representative workload for planning #22. DNS is supplied by connectivity outputs; no real sensors in dev."
   type = object({
     namespace_name         = string
+    capacity               = optional(number, 1)
     private_dns_zone_id    = string
     sender_principal_ids   = optional(map(string), {})
     receiver_principal_ids = optional(map(string), {})
@@ -15,6 +16,7 @@ module "ingest" {
 
   environment         = local.environment
   namespace_name      = each.value.namespace_name
+  capacity            = each.value.capacity
   resource_group_name = azurerm_resource_group.network.name
   location            = azurerm_resource_group.network.location
   tags                = merge(local.tags, { carga = "telemetria" })

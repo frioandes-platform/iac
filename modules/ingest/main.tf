@@ -3,7 +3,7 @@ resource "azurerm_eventhub_namespace" "this" {
   resource_group_name           = var.resource_group_name
   location                      = var.location
   sku                           = "Standard"
-  capacity                      = 1
+  capacity                      = var.capacity
   auto_inflate_enabled          = false
   public_network_access_enabled = false
   local_authentication_enabled  = false

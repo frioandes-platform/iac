@@ -6,6 +6,8 @@ on:
       - 'modules/**'
       - 'infracost.yml'
       - 'infracost-usage.yml'
+      - 'costs/**'
+      - 'scripts/infracost_scenarios.py'
       - '.github/workflows/costs.yml'
   push:
     branches: [main]
@@ -14,6 +16,8 @@ on:
       - 'modules/**'
       - 'infracost.yml'
       - 'infracost-usage.yml'
+      - 'costs/**'
+      - 'scripts/infracost_scenarios.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -23,6 +27,34 @@ concurrency:
 env:
   INFRACOST_VERSION: 0.10.46
 jobs:
+  # Separate enablement from capacity, using the same commit and four roots.
+  scenarios:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+    steps:
+      - name: Report a missing Infracost key
+        if: env.INFRACOST_API_KEY == ''
+        run: echo "::notice::INFRACOST_API_KEY is not configured; cost scenarios skipped."
+      - uses: infracost/actions/setup@e9d6e6cd65e168e76b0de50ff9957d2fe8bb1832 # v3.0.1
+        if: env.INFRACOST_API_KEY != ''
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+          version: ${{ env.INFRACOST_VERSION }}
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        if: env.INFRACOST_API_KEY != ''
+        with:
+          persist-credentials: false
+      - name: Install scenario configuration dependency
+        if: env.INFRACOST_API_KEY != ''
+        run: |
+          python3 -m venv "$RUNNER_TEMP/cost-scenarios"
+          "$RUNNER_TEMP/cost-scenarios/bin/python" -m pip install --disable-pip-version-check PyYAML==6.0.3
+      - name: Compare enablement and capacity without Azure access
+        if: env.INFRACOST_API_KEY != ''
+        run: |
+          "$RUNNER_TEMP/cost-scenarios/bin/python" scripts/infracost_scenarios.py --output-dir "$RUNNER_TEMP/infracost-scenarios"
   # Cost of the change: base branch against the pull request, posted as one
   # PR comment that is updated on every push.
   pull-request:

@@ -6,3 +6,7 @@ version: 0.1
 resource_type_default_usage:
   azurerm_firewall:
     monthly_data_processed_gb: 18293
+  # Synthetic demonstration assumption only, identical for the 1 and 2 TU cases.
+  # Leave throughput_or_capacity_units unset: capacity must come from Terraform.
+  azurerm_eventhub_namespace:
+    monthly_ingress_events: 1000000

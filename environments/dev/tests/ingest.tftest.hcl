@@ -21,6 +21,34 @@ run "disabled_by_default" {
   }
 }
 
+run "estimate_inputs_enable_configured_capacity" {
+  command = plan
+  variables {
+    security_token_values = jsondecode(file("../../costs/inputs/security.tfvars.json")).security_token_values
+    ingest                = jsondecode(file("../../costs/inputs/dev.tfvars.json")).ingest
+  }
+  assert {
+    condition     = module.ingest["alerts"].integration.capacity == var.ingest.capacity && toset(module.ingest["alerts"].integration.private_dns_zone_ids) == toset([var.ingest.private_dns_zone_id])
+    error_message = "The explicit estimation input must forward its capacity and reuse the shared DNS zone."
+  }
+}
+
+run "estimate_capacity_is_forwarded_from_dev" {
+  command = plan
+  variables {
+    security_token_values = jsondecode(file("../../costs/inputs/security.tfvars.json")).security_token_values
+    ingest                = merge(jsondecode(file("../../costs/inputs/dev.tfvars.json")).ingest, { capacity = 2 })
+  }
+  assert {
+    condition     = module.ingest["alerts"].integration.capacity == 2 && module.ingest["alerts"].integration.sku == "Standard"
+    error_message = "The estimation input must instantiate the real module and forward capacity from dev."
+  }
+  assert {
+    condition     = !module.ingest["alerts"].integration.public_access_enabled && !module.ingest["alerts"].integration.local_auth_enabled
+    error_message = "Estimating a larger namespace must preserve private access and Entra authentication."
+  }
+}
+
 # apply is exclusively in the mocked test state; it does not call Azure.
 run "private_alert_ingest_uses_existing_modules" {
   command = apply
