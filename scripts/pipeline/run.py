@@ -29,10 +29,16 @@ def mask(value):
     print(f"::add-mask::{escaped}", flush=True)
 
 
-def command(args, *, timeout=300, input_text=None, cwd=ROOT):
-    # Do not echo commands, provider errors, stdout or stderr: they can contain inputs.
+def command(args, *, timeout=300, input_text=None, cwd=ROOT, diagnostic_label=None):
+    # Only build-local opts in. Cloud commands and provider errors can contain secrets.
     result = subprocess.run(args, cwd=cwd, input=input_text, text=True,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
+    if diagnostic_label is not None:
+        print(f"{diagnostic_label}: exit code {result.returncode}", file=sys.stderr, flush=True)
+        for stream in (result.stdout, result.stderr):
+            if stream:
+                print(stream, end="" if stream.endswith("\n") else "\n", file=sys.stderr, flush=True)
+        require(result.returncode == 0, f"{diagnostic_label} failed (exit code {result.returncode}); see local output above")
     require(result.returncode == 0, f"{Path(args[0]).name} failed; inspect with an authorized operator (output withheld)")
     return result.stdout
 
@@ -169,22 +175,25 @@ def registry_login(data):
              "--password-stdin"], input_text=token["accessToken"])
 
 
-def build_image(sha, tag):
+def build_image(sha, tag, *, diagnostics=False):
     directory = ROOT / "containers/release-probe"
     build_env = os.environ.copy()
     os.environ.update(CGO_ENABLED="0", GOOS="linux", GOARCH="amd64", GOTOOLCHAIN="local")
     try:
         command(["go", "build", "-trimpath", "-ldflags", f"-s -w -X main.revision={sha}",
-                 "-o", str(directory / "release-probe"), str(directory / "main.go")])
+                 "-o", str(directory / "release-probe"), str(directory / "main.go")],
+                diagnostic_label="Local Go build" if diagnostics else None)
     finally:
         os.environ.clear()
         os.environ.update(build_env)
-    command(["docker", "build", "--network=none", "--tag", tag, str(directory)])
-    image_test(tag)
+    command(["docker", "build", "--network=none", "--tag", tag, str(directory)],
+            diagnostic_label="Local Docker build" if diagnostics else None)
+    image_test(tag, diagnostics=diagnostics)
 
 
-def image_test(image):
-    command(["docker", "run", "--rm", "--network=none", "--read-only", "--cap-drop=ALL", "--security-opt=no-new-privileges", image, "--self-test"])
+def image_test(image, *, diagnostics=False):
+    command(["docker", "run", "--rm", "--network=none", "--read-only", "--cap-drop=ALL", "--security-opt=no-new-privileges", image, "--self-test"],
+            diagnostic_label="Local container self-test" if diagnostics else None)
 
 
 def blob(data, stage, operation, name, path):
@@ -313,7 +322,7 @@ def main():
     os.umask(0o077)
     if args.action == "build-local":
         sha = command(["git", "rev-parse", "HEAD"]).strip()
-        build_image(sha, "frioandes-release-probe:local")
+        build_image(sha, "frioandes-release-probe:local", diagnostics=True)
         return
     data = config()
     sha = trusted_context(data)
