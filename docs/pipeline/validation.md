@@ -16,7 +16,7 @@ No bytecode, provider cache, local state, secrets or generated plans are deliver
 
 | Check | Result |
 | --- | --- |
-| Pipeline policy, workflow and driver tests | 38 passed |
+| Pipeline policy, workflow and driver tests | 43 passed |
 | Existing network/security Python regression tests | 17 passed |
 | Approved snapshot hashes and non-overlap | Passed: 3 application VNets, 33 subnets, 23 on-premises subnets |
 | GitHub workflow lint | Passed with actionlint 1.7.7, including custom runner labels |
@@ -26,7 +26,7 @@ No bytecode, provider cache, local state, secrets or generated plans are deliver
 | Provider initialization | Dev `init -backend=false -lockfile=readonly` succeeded with the verified local AzureRM mirror |
 
 The new tests cover the 04:00/22:00 Bogotá boundaries, midnight, a 30-minute
-remaining-window budget, campaign overlap and unknown/expired controls, incident
+remaining-window budget per pending root (60 minutes before connectivity), campaign overlap and unknown/expired controls, incident
 authorization bound to the release, missing approval, self-review or broad branch policies,
 ordered promotion, stale/altered plans, immutable action references, and the real
 driver's gate-before-each-apply ordering with fake CLI/cloud responses. A freeze

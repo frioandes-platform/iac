@@ -54,7 +54,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && inputs.operation == 'apply'
     # The prod environment's reviewers approve BEFORE this job starts.
     environment: ${{ inputs.environment }}
-    runs-on: [self-hosted, linux, x64, "${{ format('fa-{0}', inputs.environment) }}"]
+    runs-on: [self-hosted, linux, x64, fa-apply, "${{ format('fa-{0}', inputs.environment) }}"]
     timeout-minutes: 70
     outputs:
       receipt: ${{ steps.execute.outputs.receipt }}

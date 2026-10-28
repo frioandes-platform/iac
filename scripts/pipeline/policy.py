@@ -21,13 +21,18 @@ def instant(value):
     return result.astimezone(timezone.utc)
 
 
-def window_gate(control, now, incident, repository, sha, run_id, run_attempt):
-    """Allow only current, explicitly published operational controls."""
+def window_gate(control, now, incident, repository, sha, run_id, run_attempt, budget_minutes=CHANGE_BUDGET_MINUTES):
+    """Allow only current, explicitly published operational controls.
+
+    budget_minutes must cover every apply still pending in the stage, so a
+    multi-root production stage is admitted only if all its roots fit.
+    """
+    require(budget_minutes >= CHANGE_BUDGET_MINUTES, "Change budget is below one apply")
     require(now.tzinfo is not None, "Current time must be timezone-aware")
     require(control.get("schema_version") == 1, "Unknown control schema")
     require(type(control.get("campaign_active")) is bool, "Campaign status is required")
     issued, expires = instant(control["issued_at"]), instant(control["valid_until"])
-    end = now + timedelta(minutes=CHANGE_BUDGET_MINUTES)
+    end = now + timedelta(minutes=budget_minutes)
     require(issued <= now < expires and end < expires, "Operational control is expired or too short-lived")
     require(expires - issued <= timedelta(hours=24), "Publish operational controls at least daily")
     windows = control.get("campaign_windows")
@@ -56,7 +61,7 @@ def window_gate(control, now, incident, repository, sha, run_id, run_attempt):
     cutoff = local.replace(hour=4, minute=0, second=0, microsecond=0)
     if local.hour >= 22:
         cutoff += timedelta(days=1)
-    require(end < cutoff, "Insufficient time before dispatch; reserve 30 minutes")
+    require(end < cutoff, f"Insufficient time before dispatch; reserve {budget_minutes} minutes")
     return "Production window and campaign gate passed"
 
 

@@ -27,11 +27,27 @@ class WorkflowTests(unittest.TestCase):
         for name, previous in (("dev_apply", "dev_plan"), ("test_plan", "dev_apply"),
                                ("test_apply", "test_plan"), ("prod_plan", "test_apply"), ("prod_apply", "prod_plan")):
             self.assertIn(previous, jobs[name]["needs"])
-            self.assertNotIn("if", jobs[name])  # No always() bypass of failed dependencies.
+            # No always() bypass of failed dependencies; prod only adds the manual-run condition.
+            expected = "github.event_name == 'workflow_dispatch'" if name.startswith("prod_") else None
+            self.assertEqual(jobs[name].get("if"), expected)
         self.assertEqual(jobs["prod_apply"]["with"]["previous_receipt"], "${{ needs.test_apply.outputs.receipt }}")
         self.assertEqual(jobs["test_apply"]["with"]["previous_receipt"], "${{ needs.dev_apply.outputs.receipt }}")
         for name in ("dev_plan", "dev_apply", "test_plan", "test_apply", "prod_plan", "prod_apply"):
             self.assertEqual(jobs[name]["with"]["image"], "${{ needs.build.outputs.image }}")
+
+    def test_push_to_main_stops_at_test(self):
+        jobs = workflow("promote.yml")["jobs"]
+        for name in ("dev_plan", "dev_apply", "test_plan", "test_apply"):
+            self.assertNotIn("if", jobs[name])
+        for name in ("prod_plan", "prod_apply"):
+            self.assertIn("workflow_dispatch", jobs[name]["if"])
+
+    def test_plan_and_apply_runners_are_separated(self):
+        jobs = workflow("terraform-stage.yml")["jobs"]
+        self.assertIn("fa-plan", jobs["plan"]["runs-on"])
+        self.assertNotIn("fa-apply", jobs["plan"]["runs-on"])
+        self.assertIn("fa-apply", jobs["apply"]["runs-on"])
+        self.assertNotIn("fa-plan", jobs["apply"]["runs-on"])
 
     def test_planning_is_automatic_and_production_apply_is_protected(self):
         promotion = workflow("promote.yml")

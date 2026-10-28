@@ -14,7 +14,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from scripts.pipeline.policy import ROOTS, check_environment, check_plan, check_receipt, require, window_gate
+from scripts.pipeline.policy import CHANGE_BUDGET_MINUTES, ROOTS, check_environment, check_plan, check_receipt, require, window_gate
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / ".github/deployment-config.json"
@@ -148,13 +148,14 @@ def secret(vault, name):
     return parsed, record["id"]
 
 
-def production_gate(data, identity, incident):
+def production_gate(data, identity, incident, remaining_roots=1):
     protections(data, ["prod"])
     current_main(data, identity["sha"])
     settings = data["stages"]["prod"]
     control, version = secret(settings["vault"], settings["control_secret"])
     decision = window_gate(control, datetime.now(timezone.utc), incident,
-                           data["repository"], identity["sha"], identity["run_id"], identity["run_attempt"])
+                           data["repository"], identity["sha"], identity["run_id"], identity["run_attempt"],
+                           budget_minutes=CHANGE_BUDGET_MINUTES * remaining_roots)
     # Values are public audit identifiers, never the control document or its secrets.
     summary(f"- Gate: {decision}. Control version: `{version.rsplit('/', 1)[-1]}`.")
 
@@ -252,7 +253,8 @@ def stage(data, action, environment, temporary):
         registry_login(data)
         command(["docker", "pull", release["image"]], timeout=600)
         image_test(release["image"])
-    for root in ROOTS[environment]:
+    roots = ROOTS[environment]
+    for index, root in enumerate(roots):
         tf = initialize(data, root, temporary)
         plan_file, manifest_file = temporary / (root + ".tfplan"), temporary / (root + ".json")
         lock_sha = digest(ROOT / "environments" / root / ".terraform.lock.hcl")
@@ -290,7 +292,9 @@ def stage(data, action, environment, temporary):
             current_main(data, release["sha"])
             if environment == "prod":
                 # Must run AFTER approval and immediately before EACH production mutation.
-                production_gate(data, release, os.environ.get("INCIDENT_ID", ""))
+                # The budget covers this root and every later one, so the clock alone
+                # cannot stop prod after connectivity was already applied.
+                production_gate(data, release, os.environ.get("INCIDENT_ID", ""), len(roots) - index)
             command(tf + ["apply", "-input=false", "-lock-timeout=60s", str(plan_file)], timeout=1200)
             # Refresh-only plan is read-only and detects drift immediately after apply.
             command(tf + ["plan", "-refresh-only", "-detailed-exitcode", "-input=false", "-lock-timeout=60s", f"-var-file={input_file}"], timeout=300)

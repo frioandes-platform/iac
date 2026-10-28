@@ -18,13 +18,14 @@ class ExecutionTests(unittest.TestCase):
         image = "sample.azurecr.io/frioandes/release-probe@sha256:" + "b" * 64
         identity = {"sha": "a" * 40, "run_id": "123", "run_attempt": "1", "image": image}
         previous = {**identity, "environment": "test", "roots": ["test"], "status": "succeeded"}
-        calls, outputs = [], []
+        calls, outputs, budgets = [], [], []
         gates = 0
 
         def gate(*args):
             nonlocal gates
             gates += 1
             calls.append("gate")
+            budgets.append(args[3])
             if gates == reject_gate:
                 raise ValueError("Dispatch window")
 
@@ -64,6 +65,7 @@ class ExecutionTests(unittest.TestCase):
                 run.stage(data, "apply", "prod", Path(temp))
             except ValueError as error:
                 failure = error
+        self.budgets = budgets
         return calls, outputs, failure
 
     def test_gate_immediately_precedes_each_shared_and_productive_apply(self):
@@ -72,6 +74,10 @@ class ExecutionTests(unittest.TestCase):
         self.assertEqual(calls, ["gate", "apply", "gate", "apply"])
         receipt = json.loads(outputs[0][1])
         self.assertEqual(receipt["roots"], ["connectivity", "prod"])
+
+    def test_first_production_gate_reserves_time_for_every_remaining_root(self):
+        self.exercise()
+        self.assertEqual(self.budgets, [2, 1])
 
     def test_block_after_approval_never_invokes_apply(self):
         calls, outputs, failure = self.exercise(reject_gate=1)

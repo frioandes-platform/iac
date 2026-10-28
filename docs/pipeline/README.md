@@ -25,7 +25,12 @@ explicit initial state, not evidence that a deployment has run.
 | `tests/pipeline/` | Boundary, rejection, workflow graph and driver-order tests |
 | `containers/release-probe/` | Minimal non-root demonstration image; no business application or credentials |
 
-A push to `main`, or a manual run **on main**, follows this sequence:
+A push to `main` runs steps 1 to 5 and stops after test. Production (steps 6 and
+7) runs only from a manual run **on main** (`workflow_dispatch`), started inside
+the change window: after 22:00 and early enough to finish before 03:00 (see the
+gate below). A daytime merge must not plan prod, because the saved plan would be
+older than six hours when the window opens and would be rejected. The manual run
+repeats dev and test for the same commit, so the receipts stay in one run:
 
 1. Validate #20/#21 and, when present, #22. Check pipeline policy and YAML.
 2. Verify bootstrap configuration and the existing GitHub Environments.
@@ -141,10 +146,13 @@ release. A control version may span at most 24 hours. Operations must refresh it
 and keep the campaign calendar authoritative; the speculative dates in the
 migration design are not silently treated as client-approved campaign dates.
 
-Each apply has a 20-minute process deadline. The gate reserves 30 minutes,
-including margin, before dispatch or any scheduled campaign starts. Consequently,
-normal changes cannot start at or after **03:30**, even though dispatch starts
-at 04:00. Approval at 02:00 does not authorize an apply that starts at 04:00.
+Each apply has a 20-minute process deadline. The gate reserves 30 minutes per
+pending root, including margin, before dispatch or any scheduled campaign starts.
+Production has two roots, so the gate before connectivity reserves 60 minutes and
+the gate before prod reserves 30. The clock alone therefore cannot stop prod after
+connectivity was applied; only a newly published freeze or campaign can. Normal
+production changes cannot start at or after **03:00**, even though dispatch
+starts at 04:00. Approval at 02:00 does not authorize an apply that starts at 04:00.
 No sleeping job waits for the next window; a denied release fails for review.
 
 The gate controls admission and execution deadlines; it cannot atomically undo

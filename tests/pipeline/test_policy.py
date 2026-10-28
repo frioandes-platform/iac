@@ -42,6 +42,18 @@ class WindowTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Insufficient time"):
             self.gate(instant("2026-10-22T08:30:00Z"))
 
+    def test_two_production_roots_need_both_budgets_before_the_first_apply(self):
+        # connectivity then prod: 60 minutes must remain before 04:00.
+        self.assertIn("passed", window_gate(self.control, instant("2026-10-22T07:59:59Z"), "",
+                                            "frioandes-platform/iac", "a" * 40, "123", "1", budget_minutes=60))
+        with self.assertRaisesRegex(ValueError, "reserve 60 minutes"):
+            window_gate(self.control, instant("2026-10-22T08:00:00Z"), "",
+                        "frioandes-platform/iac", "a" * 40, "123", "1", budget_minutes=60)
+
+    def test_budget_below_one_apply_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "below one apply"):
+            window_gate(self.control, self.now, "", "frioandes-platform/iac", "a" * 40, "123", "1", budget_minutes=10)
+
     def test_midnight_is_open(self):
         self.gate(instant("2026-10-22T05:00:00Z"))
 

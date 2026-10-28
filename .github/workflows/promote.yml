@@ -130,6 +130,9 @@ jobs:
       image: ${{ needs.build.outputs.image }}
       previous_receipt: ${{ needs.dev_apply.outputs.receipt }}
   prod_plan:
+    # Production runs only from a manual run on main inside the change window.
+    # A daytime merge would otherwise plan prod hours before 22:00 and expire.
+    if: github.event_name == 'workflow_dispatch'
     needs: [build, test_apply]
     permissions:
       contents: read
@@ -142,6 +145,9 @@ jobs:
       image: ${{ needs.build.outputs.image }}
       previous_receipt: ${{ needs.test_apply.outputs.receipt }}
   prod_apply:
+    # Production runs only from a manual run on main inside the change window.
+    # A daytime merge would otherwise plan prod hours before 22:00 and expire.
+    if: github.event_name == 'workflow_dispatch'
     needs: [build, test_apply, prod_plan]
     permissions:
       contents: read

@@ -65,7 +65,8 @@ Runner labels:
 
 - Build: `self-hosted`, `linux`, `x64`, `fa-build`.
 - Plan: the same base labels plus `fa-plan` and `fa-dev`, `fa-test` or `fa-prod`.
-- Apply: base labels plus `fa-dev`, `fa-test` or `fa-prod` as appropriate.
+- Apply: base labels plus `fa-apply` and `fa-dev`, `fa-test` or `fa-prod`. Never
+  give `fa-apply` to a plan runner: the label keeps plan runners off apply jobs.
 - The prod pool needs access to both prod and the connectivity subscription's
   approved private endpoints. Plan/apply identities remain separate even if
   runner labels select the same freshly provisioned pool.
