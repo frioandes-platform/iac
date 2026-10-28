@@ -14,6 +14,15 @@ container build/push and the dispatch/campaign gate. See the
 and the [validation record](docs/pipeline/validation.md) for executed checks.
 Cloud promotion ships disabled until real Azure and GitHub prerequisites exist.
 
+## tfsec security analysis
+
+Install the checksum-pinned scanner with `python3 scripts/tfsec.py install`.
+Run `python3 scripts/tfsec.py scan` and `python3 scripts/tfsec.py test-detection`.
+The same commands run in the independent `tfsec` job on pull requests and pushes
+to main. [Scope, limitations and demonstration](docs/pipeline/tfsec.md) explain
+why zero findings must not be interpreted as complete coverage of CSV-driven rules.
+`bash scripts/check-static.sh` also includes tfsec before TFLint and Checkov.
+
 ## Layout
 
 ```
