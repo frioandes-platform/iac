@@ -20,3 +20,6 @@ security-core-evaluation.json
 containers/release-probe/release-probe
 .venv/
 .infracost-base/
+
+# Verified local tfsec release; never commit scanner binaries.
+.tools/tfsec/

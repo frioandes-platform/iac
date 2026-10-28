@@ -44,6 +44,22 @@ jobs:
           cache: false
       - name: Build and self-test the demonstration image without Azure access
         run: python3 scripts/pipeline/run.py build-local
+  tfsec:
+    # Independent job: another linter's failure must not hide tfsec's result.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+      - name: Install checksum-pinned tfsec
+        run: python3 scripts/tfsec.py install
+      - name: Scan Terraform modules and environments with tfsec
+        run: python3 scripts/tfsec.py scan
+      - name: Verify tfsec rejects public SSH and accepts the correction
+        run: python3 scripts/tfsec.py test-detection
   static-analysis:
     # TFLint (with the AzureRM ruleset) and Checkov over every root and module.
     runs-on: ubuntu-24.04
