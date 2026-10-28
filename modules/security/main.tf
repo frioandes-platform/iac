@@ -69,6 +69,7 @@ resource "azurerm_public_ip" "management" {
 }
 
 resource "azurerm_firewall_policy" "this" {
+  # checkov:skip=CKV_AZURE_220:IDPS needs the Premium tier; the design keeps Standard (firewall-settings.csv, sku_tier).
   name                              = "${var.name}-policy"
   resource_group_name               = var.resource_group_name
   location                          = var.location
@@ -116,6 +117,7 @@ resource "azurerm_firewall_policy" "this" {
 }
 
 resource "azurerm_firewall" "this" {
+  # checkov:skip=CKV_AZURE_216:Threat intelligence is set to Deny on the attached firewall policy, which governs a policy-managed firewall.
   name                = var.name
   location            = var.location
   resource_group_name = var.resource_group_name

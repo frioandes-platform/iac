@@ -105,7 +105,7 @@ authoring. No authenticated Azure deployment or live send/receive test was run.
 
 The following checks completed successfully on this revision:
 
-- Pipeline policy, workflow and driver tests: 43 passed.
+- Pipeline policy, workflow and driver tests: 47 passed.
 - Existing network/security Python tests: 17 passed.
 - Snapshot hashes and network non-overlap verification passed.
 - Terraform formatting checks passed.

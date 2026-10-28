@@ -25,6 +25,7 @@ resource "azurerm_virtual_network" "hub" {
   tags                = local.tags
 }
 resource "azurerm_subnet" "firewall" {
+  # checkov:skip=CKV2_AZURE_31:Azure does not allow an NSG on AzureFirewallSubnet or AzureFirewallManagementSubnet.
   for_each                        = local.firewall_subnets
   name                            = each.key
   address_prefixes                = [each.value.cidr]

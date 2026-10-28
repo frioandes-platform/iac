@@ -60,11 +60,11 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("run.py apply", stage["jobs"]["apply"]["steps"][-1]["run"])
 
     def test_actions_are_immutable_and_checkout_does_not_keep_credentials(self):
-        for name in ("validate.yml", "promote.yml", "terraform-stage.yml"):
+        for name in ("validate.yml", "promote.yml", "terraform-stage.yml", "costs.yml"):
             for job in workflow(name)["jobs"].values():
                 for step in job.get("steps", []):
                     if "uses" in step:
-                        self.assertRegex(step["uses"], r"^[\w-]+/[\w-]+@[0-9a-f]{40}$")
+                        self.assertRegex(step["uses"], r"^[\w-]+/[\w-]+(/[\w-]+)*@[0-9a-f]{40}$")
                         if step["uses"].startswith("actions/checkout@"):
                             self.assertEqual(step["with"]["persist-credentials"], "false")
 
@@ -76,6 +76,45 @@ class WorkflowTests(unittest.TestCase):
             self.assertNotIn("upload-artifact", text)
             self.assertNotIn("secrets.AZURE_CREDENTIALS", text)
             self.assertNotIn("pull_request_target", text)
+
+    def test_static_analysis_runs_on_every_pull_request(self):
+        data = workflow("validate.yml")
+        job = data["jobs"]["static-analysis"]
+        steps = " ".join(step.get("run", "") for step in job["steps"])
+        self.assertIn("tflint --recursive", steps)
+        self.assertIn("checkov --config-file .checkov.yaml", steps)
+        self.assertRegex(steps, r"checkov==\d+\.\d+\.\d+")
+        tflint = [s for s in job["steps"] if s.get("uses", "").startswith("terraform-linters/setup-tflint@")]
+        self.assertRegex(tflint[0]["with"]["tflint_version"], r"^v\d+\.\d+\.\d+$")
+
+    def test_checkov_skips_are_inline_and_justified(self):
+        self.assertNotIn("skip-check", (ROOT / ".checkov.yaml").read_text())
+        for path in list((ROOT / "modules").rglob("*.tf")) + list((ROOT / "environments").rglob("*.tf")):
+            for line in path.read_text().splitlines():
+                if "checkov:skip=" in line:
+                    self.assertRegex(line, r"checkov:skip=CKV2?_AZURE_\d+:\S.{20,}", str(path))
+
+    def test_cost_estimate_never_gets_cloud_identity_or_runs_untrusted_code_with_secrets(self):
+        data = workflow("costs.yml")
+        self.assertIn("pull_request", data["on"])
+        self.assertNotIn("pull_request_target", data["on"])
+        self.assertEqual(data["permissions"], {"contents": "read"})
+        for job in data["jobs"].values():
+            self.assertEqual(job["runs-on"], "ubuntu-24.04")
+            self.assertNotIn("id-token", job.get("permissions", {}))
+        self.assertEqual(data["jobs"]["pull-request"]["permissions"], {"contents": "read", "pull-requests": "write"})
+        self.assertNotIn("permissions", data["jobs"]["baseline"])
+
+    def test_cost_comment_is_updated_and_skipped_without_a_key(self):
+        data = workflow("costs.yml")
+        steps = data["jobs"]["pull-request"]["steps"]
+        self.assertEqual(steps[0]["if"], "env.INFRACOST_API_KEY == ''")
+        self.assertTrue(all(s["if"] == "env.INFRACOST_API_KEY != ''" for s in steps[1:]))
+        self.assertIn("--behavior=update", steps[-1]["run"])
+        self.assertIn("--show-all-projects", steps[-1]["run"])
+        setup = [s for s in steps if s.get("uses", "").startswith("infracost/actions/setup@")][0]
+        self.assertEqual(setup["with"]["version"], "${{ env.INFRACOST_VERSION }}")
+        self.assertRegex(data["env"]["INFRACOST_VERSION"], r"^\d+\.\d+\.\d+$")
 
     def test_all_roots_use_partial_remote_backends(self):
         for root in ("dev", "test", "prod", "connectivity"):

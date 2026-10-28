@@ -1,0 +1,110 @@
+name: Infrastructure cost
+on:
+  pull_request:
+    paths:
+      - 'environments/**'
+      - 'modules/**'
+      - 'infracost.yml'
+      - 'infracost-usage.yml'
+      - '.github/workflows/costs.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'environments/**'
+      - 'modules/**'
+      - 'infracost.yml'
+      - 'infracost-usage.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: costs-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  INFRACOST_VERSION: 0.10.46
+jobs:
+  # Cost of the change: base branch against the pull request, posted as one
+  # PR comment that is updated on every push.
+  pull-request:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+    steps:
+      - name: Report a missing Infracost key
+        if: env.INFRACOST_API_KEY == ''
+        run: echo "::notice::INFRACOST_API_KEY is not configured (or this is a fork); cost estimate skipped."
+      - uses: infracost/actions/setup@e9d6e6cd65e168e76b0de50ff9957d2fe8bb1832 # v3.0.1
+        if: env.INFRACOST_API_KEY != ''
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+          version: ${{ env.INFRACOST_VERSION }}
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        if: env.INFRACOST_API_KEY != ''
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        if: env.INFRACOST_API_KEY != ''
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: .infracost-base
+          persist-credentials: false
+      - name: Price the base branch
+        if: env.INFRACOST_API_KEY != ''
+        run: |
+          # The base may predate the Infracost files; price it with the PR's.
+          cp -n infracost.yml infracost-usage.yml .infracost-base/
+          cd .infracost-base
+          infracost breakdown --config-file=infracost.yml --format=json --out-file="$RUNNER_TEMP/base.json"
+      - name: Price the change
+        if: env.INFRACOST_API_KEY != ''
+        run: |
+          infracost diff --config-file=infracost.yml --compare-to="$RUNNER_TEMP/base.json" \
+            --format=json --out-file="$RUNNER_TEMP/diff.json"
+          infracost output --path="$RUNNER_TEMP/diff.json" --format=github-comment --show-all-projects >> "$GITHUB_STEP_SUMMARY"
+      - name: Comment the cost on the pull request
+        if: env.INFRACOST_API_KEY != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          infracost comment github --path="$RUNNER_TEMP/diff.json" --repo="$GITHUB_REPOSITORY" \
+            --pull-request="$PR_NUMBER" --github-token="$GH_TOKEN" --behavior=update --show-all-projects
+
+  # Monthly cost of the whole infrastructure on main, in the run summary.
+  baseline:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+    steps:
+      - name: Report a missing Infracost key
+        if: env.INFRACOST_API_KEY == ''
+        run: echo "::notice::INFRACOST_API_KEY is not configured; cost estimate skipped."
+      - uses: infracost/actions/setup@e9d6e6cd65e168e76b0de50ff9957d2fe8bb1832 # v3.0.1
+        if: env.INFRACOST_API_KEY != ''
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+          version: ${{ env.INFRACOST_VERSION }}
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        if: env.INFRACOST_API_KEY != ''
+        with:
+          persist-credentials: false
+      - name: Price every root
+        if: env.INFRACOST_API_KEY != ''
+        run: |
+          infracost breakdown --config-file=infracost.yml --format=json --out-file="$RUNNER_TEMP/baseline.json"
+          {
+            echo '## Monthly infrastructure cost (Infracost)'
+            echo
+            echo 'List prices from the Terraform code; usage figures from `infracost-usage.yml`.'
+            echo
+            echo '```'
+            infracost output --path="$RUNNER_TEMP/baseline.json" --format=table --show-skipped
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
