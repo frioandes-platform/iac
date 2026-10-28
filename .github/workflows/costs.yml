@@ -65,7 +65,7 @@ jobs:
         run: |
           infracost diff --config-file=infracost.yml --compare-to="$RUNNER_TEMP/base.json" \
             --format=json --out-file="$RUNNER_TEMP/diff.json"
-          infracost output --path="$RUNNER_TEMP/diff.json" --format=diff >> "$GITHUB_STEP_SUMMARY"
+          infracost output --path="$RUNNER_TEMP/diff.json" --format=github-comment --show-all-projects >> "$GITHUB_STEP_SUMMARY"
       - name: Comment the cost on the pull request
         if: env.INFRACOST_API_KEY != ''
         env:
@@ -73,7 +73,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           infracost comment github --path="$RUNNER_TEMP/diff.json" --repo="$GITHUB_REPOSITORY" \
-            --pull-request="$PR_NUMBER" --github-token="$GH_TOKEN" --behavior=update
+            --pull-request="$PR_NUMBER" --github-token="$GH_TOKEN" --behavior=update --show-all-projects
 
   # Monthly cost of the whole infrastructure on main, in the run summary.
   baseline:

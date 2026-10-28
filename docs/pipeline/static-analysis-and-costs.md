@@ -33,8 +33,8 @@ in this table, reviewed in the pull request.
 
 When a pull request touches `environments/`, `modules/` or the Infracost files,
 `costs.yml` prices the base branch and the pull request from the Terraform code
-and posts **one comment** with the monthly difference per root (connectivity, dev,
-test, prod). Each new push updates that comment. The run summary has the same
+and posts **one comment** with the monthly difference and the new monthly cost
+of every root (connectivity, dev, test, prod), also when a root does not change. Each new push updates that comment. The run summary has the same
 table.
 
 On every merge to `main`, and on a manual run, the `baseline` job prices the

@@ -111,6 +111,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(steps[0]["if"], "env.INFRACOST_API_KEY == ''")
         self.assertTrue(all(s["if"] == "env.INFRACOST_API_KEY != ''" for s in steps[1:]))
         self.assertIn("--behavior=update", steps[-1]["run"])
+        self.assertIn("--show-all-projects", steps[-1]["run"])
         setup = [s for s in steps if s.get("uses", "").startswith("infracost/actions/setup@")][0]
         self.assertEqual(setup["with"]["version"], "${{ env.INFRACOST_VERSION }}")
         self.assertRegex(data["env"]["INFRACOST_VERSION"], r"^\d+\.\d+\.\d+$")
