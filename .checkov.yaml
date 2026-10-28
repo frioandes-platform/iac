@@ -1,0 +1,9 @@
+# Security scan of every Terraform root and module. Each accepted finding is
+# skipped inline on its resource, with the reason; nothing is skipped globally.
+directory:
+  - .
+framework:
+  - terraform
+download-external-modules: false
+compact: true
+quiet: true

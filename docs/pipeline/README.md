@@ -24,6 +24,8 @@ explicit initial state, not evidence that a deployment has run.
 | `environments/*/backend.tf` | Partial Azure Blob backend configuration, one state per root |
 | `tests/pipeline/` | Boundary, rejection, workflow graph and driver-order tests |
 | `containers/release-probe/` | Minimal non-root demonstration image; no business application or credentials |
+| `.github/workflows/costs.yml` | Infracost: cost of each pull request as a PR comment, and the monthly cost of all roots on main. See [static-analysis-and-costs.md](static-analysis-and-costs.md) |
+| `.tflint.hcl`, `.checkov.yaml` | TFLint and Checkov configuration, run by the `static-analysis` job of `validate.yml` |
 
 A push to `main` runs steps 1 to 5 and stops after test. Production (steps 6 and
 7) runs only from a manual run **on main** (`workflow_dispatch`), started inside

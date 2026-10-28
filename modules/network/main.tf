@@ -49,6 +49,7 @@ resource "azurerm_virtual_network" "this" {
 }
 
 resource "azurerm_subnet" "this" {
+  # checkov:skip=CKV2_AZURE_31:NSGs are attached by modules/security/subnet-controls, a separate module Checkov cannot link.
   for_each = local.subnets
 
   name                 = each.value.subnet

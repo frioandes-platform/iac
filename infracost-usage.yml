@@ -1,0 +1,8 @@
+# Usage estimates for prices that depend on traffic. They follow the cost
+# document in frioandes-platform/planning (docs/costs/costo-mes-estable-y-campana.md):
+# the firewall processes 16,630 GB a month of user traffic to the control
+# tower, plus 10 % margin. Update this file when the planning figures change.
+version: 0.1
+resource_type_default_usage:
+  azurerm_firewall:
+    monthly_data_processed_gb: 18293

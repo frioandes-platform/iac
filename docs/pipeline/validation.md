@@ -16,7 +16,7 @@ No bytecode, provider cache, local state, secrets or generated plans are deliver
 
 | Check | Result |
 | --- | --- |
-| Pipeline policy, workflow and driver tests | 43 passed |
+| Pipeline policy, workflow and driver tests | 47 passed |
 | Existing network/security Python regression tests | 17 passed |
 | Approved snapshot hashes and non-overlap | Passed: 3 application VNets, 33 subnets, 23 on-premises subnets |
 | GitHub workflow lint | Passed with actionlint 1.7.7, including custom runner labels |

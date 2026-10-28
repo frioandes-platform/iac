@@ -19,3 +19,4 @@ security-core-evaluation.json
 .pipeline-runtime/
 containers/release-probe/release-probe
 .venv/
+.infracost-base/

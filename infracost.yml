@@ -1,0 +1,16 @@
+# Infracost projects: one per Terraform root, priced from the HCL without an
+# Azure login. Usage-based prices come from infracost-usage.yml.
+version: 0.1
+projects:
+  - path: environments/connectivity
+    name: connectivity
+    usage_file: infracost-usage.yml
+  - path: environments/dev
+    name: dev
+    usage_file: infracost-usage.yml
+  - path: environments/test
+    name: test
+    usage_file: infracost-usage.yml
+  - path: environments/prod
+    name: prod
+    usage_file: infracost-usage.yml
