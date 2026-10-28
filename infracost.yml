@@ -1,16 +1,28 @@
 # Infracost projects: one per Terraform root, priced from the HCL without an
 # Azure login. Usage-based prices come from infracost-usage.yml.
+# Explicit synthetic estimate: shared DNS and dev ingestion at one Standard TU.
+# These files are outside the roots and are never auto-loaded for deployment.
 version: 0.1
 projects:
   - path: environments/connectivity
     name: connectivity
     usage_file: infracost-usage.yml
+    terraform_var_files:
+      - ../../costs/inputs/security.tfvars.json
+      - ../../costs/inputs/connectivity.tfvars.json
   - path: environments/dev
     name: dev
     usage_file: infracost-usage.yml
+    terraform_var_files:
+      - ../../costs/inputs/security.tfvars.json
+      - ../../costs/inputs/dev.tfvars.json
   - path: environments/test
     name: test
     usage_file: infracost-usage.yml
+    terraform_var_files:
+      - ../../costs/inputs/security.tfvars.json
   - path: environments/prod
     name: prod
     usage_file: infracost-usage.yml
+    terraform_var_files:
+      - ../../costs/inputs/security.tfvars.json

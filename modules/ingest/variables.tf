@@ -16,6 +16,17 @@ variable "namespace_name" {
   }
 }
 
+variable "capacity" {
+  description = "Throughput units for the fixed Standard SKU (Azure limit: 1-40); not Premium processing units."
+  type        = number
+  default     = 1
+  nullable    = false
+  validation {
+    condition     = var.capacity >= 1 && var.capacity <= 40 && var.capacity == floor(var.capacity)
+    error_message = "Standard Event Hubs capacity must be an integer from 1 to 40 throughput units."
+  }
+}
+
 variable "resource_group_name" {
   description = "Resource group in the application subscription."
   type        = string
